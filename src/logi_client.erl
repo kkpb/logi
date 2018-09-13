@@ -13,6 +13,17 @@
         ]).
 
 %%------------------------------------------------------------------------------------------------------------------------
+%% Macros & Records & Types
+%%------------------------------------------------------------------------------------------------------------------------
+-ifdef(OTP_RELEASE).
+-define(CAPTURE_STACKTRACE, :__StackTrace).
+-define(GET_STACKTRACE, __StackTrace).
+-else.
+-define(CAPTURE_STACKTRACE, ).
+-define(GET_STACKTRACE, erlang:get_stacktrace()).
+-endif.
+
+%%------------------------------------------------------------------------------------------------------------------------
 %% Exported Functions
 %%------------------------------------------------------------------------------------------------------------------------
 %% @doc ログ出力に必要な情報の準備を行う
@@ -53,11 +64,11 @@ write(Context, Backends, Location, MsgInfo, Format, Args) ->
                    try
                        _ = Module:write(Backend, Location, MsgInfo, Format, Args)
                    catch
-                       Class:Reason ->
+                       Class:Reason ?CAPTURE_STACKTRACE->
                            error_logger:error_report(
                              [{location, [{module, ?MODULE}, {line, ?LINE}, {pid, self()}]},
                               {mfargs, {Module, write, [Backend, Location, MsgInfo, Format, Args]}},
-                              {exception, {Class, Reason, erlang:get_stacktrace()}}])
+                              {exception, {Class, Reason, ?GET_STACKTRACE}}])
                    end
            end,
            Backends),

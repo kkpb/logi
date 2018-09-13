@@ -38,6 +38,13 @@
 -type condition_clause() :: logi:log_level() | {logi:log_level(), constraint()}.
 -type constraint()       :: {match, {module(), Function::atom(), Arg::term()}}
                           | none.
+-ifdef(OTP_RELEASE).
+-define(CAPTURE_STACKTRACE, :__StackTrace).
+-define(GET_STACKTRACE, __StackTrace).
+-else.
+-define(CAPTURE_STACKTRACE, ).
+-define(GET_STACKTRACE, erlang:get_stacktrace()).
+-endif.
 
 %%------------------------------------------------------------------------------------------------------------------------
 %% Exported Functions
@@ -78,11 +85,11 @@ is_satisfied({match, {M, F, Arg}}, Location, Headers, MetaData) ->
             false -> false
         end
     catch
-        Class:Reason ->
+        Class:Reason ?CAPTURE_STACKTRACE ->
             error_logger:error_report(
               [{location, [{module, ?MODULE}, {line, ?LINE}, {pid, self()}]},
                {mfargs, {M, F, [Arg, Location, Headers, MetaData]}},
-               {exception, {Class, Reason, erlang:get_stacktrace()}}])
+               {exception, {Class, Reason, ?GET_STACKTRACE}}])
     end.
 
 %%------------------------------------------------------------------------------------------------------------------------
